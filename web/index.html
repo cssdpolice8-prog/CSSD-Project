@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+<script>
+  window.flutterWebRenderer = "html";
+</script>
+
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -32,6 +36,15 @@
   <title>cssd_project</title>
   <link rel="manifest" href="manifest.json">
 </head>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for (let registration of registrations) {
+      registration.unregister();
+    }
+  });
+}
+</script>
 <body>
   <script src="flutter_bootstrap.js" async></script>
 </body>

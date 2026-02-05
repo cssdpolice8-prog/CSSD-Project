@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cssd_project/homepage/viewphoto.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:panara_dialogs/panara_dialogs.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeMenu extends StatefulWidget {
   const HomeMenu({super.key});
@@ -14,8 +17,11 @@ class HomeMenu extends StatefulWidget {
 }
 
 class _HomeMenuState extends State<HomeMenu> {
-  Uint8List? base64_Slip;
+  // Uint8List? base64_Slip;
+  final _Nametools = TextEditingController();
+  String? base64Slip;
   String? name_room, room_id;
+  int amount = 1;
 
   @override
   void initState() {
@@ -30,10 +36,12 @@ class _HomeMenuState extends State<HomeMenu> {
           Row(
             children: [
               Expanded(
-                child: StreamBuilder(
-                  stream: Stream.periodic(const Duration(seconds: 1)),
-                  builder: (context, snapshot) {
-                    return Card(
+                child:
+                    // StreamBuilder(
+                    //   stream: Stream.periodic(const Duration(seconds: 1)),
+                    //   builder: (context, snapshot) {
+                    // return
+                    Card(
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.only(
@@ -111,9 +119,9 @@ class _HomeMenuState extends State<HomeMenu> {
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
+                      // );
+                      //   },
+                    ),
               ),
             ],
           ),
@@ -179,15 +187,11 @@ class _HomeMenuState extends State<HomeMenu> {
                                   child: CircularProgressIndicator(),
                                 );
                               }
-
-                              //  error
                               if (snapshot.hasError) {
                                 return Center(
                                   child: Text("Error: ${snapshot.error}"),
                                 );
                               }
-
-                              // null safety
                               if (!snapshot.hasData || snapshot.data == null) {
                                 return const Center(child: Text("No data"));
                               }
@@ -313,6 +317,25 @@ class _HomeMenuState extends State<HomeMenu> {
                                         .collection("photo_cssd")
                                         .snapshots(),
                                     builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      if (snapshot.hasError) {
+                                        return Center(
+                                          child: Text(
+                                            "Error: ${snapshot.error}",
+                                          ),
+                                        );
+                                      }
+                                      if (!snapshot.hasData ||
+                                          snapshot.data == null) {
+                                        return const Center(
+                                          child: Text("No data"),
+                                        );
+                                      }
                                       final today = DateFormat(
                                         'yyyy-MM-dd',
                                       ).format(DateTime.now());
@@ -329,7 +352,18 @@ class _HomeMenuState extends State<HomeMenu> {
                                               : false;
                                         } else if (createdAt is Map &&
                                             createdAt["seconds"] != null) {
-                                          final seconds = createdAt["seconds"];
+                                          final secondsRaw =
+                                              createdAt["seconds"];
+
+                                          final seconds = secondsRaw is int
+                                              ? secondsRaw
+                                              : secondsRaw is double
+                                              ? secondsRaw.toInt()
+                                              : int.tryParse(
+                                                      secondsRaw.toString(),
+                                                    ) ??
+                                                    0;
+
                                           final date =
                                               DateTime.fromMillisecondsSinceEpoch(
                                                 seconds * 1000,
@@ -337,10 +371,12 @@ class _HomeMenuState extends State<HomeMenu> {
                                           final dateStr = DateFormat(
                                             'yyyy-MM-dd',
                                           ).format(date);
+
                                           return dateStr == today
                                               ? e.data()["room_id"] == room_id
                                               : false;
                                         }
+
                                         return false;
 
                                         // return e.data()["room_id"] == room_id;
@@ -368,70 +404,82 @@ class _HomeMenuState extends State<HomeMenu> {
                                                 ),
                                                 Expanded(
                                                   flex: 2,
-                                                  child: IconButton(
-                                                    onPressed: () {
-                                                      if (room_id != null) {
-                                                        uploadFile_photo_camera().then((
-                                                          _,
-                                                        ) async {
-                                                          final now =
-                                                              DateTime.now();
+                                                  child: (!kIsWeb)
+                                                      ? IconButton(
+                                                          onPressed: () {
+                                                            if (room_id !=
+                                                                null) {
+                                                              uploadFile_photo_camera().then((
+                                                                _,
+                                                              ) async {
+                                                                if (base64Slip !=
+                                                                    null) {
+                                                                  final now =
+                                                                      DateTime.now();
 
-                                                          final doc_bill =
-                                                              now.millisecondsSinceEpoch ~/
-                                                              1000;
+                                                                  final doc_bill =
+                                                                      now.millisecondsSinceEpoch ~/
+                                                                      1000;
 
-                                                          await FirebaseFirestore
-                                                              .instance
-                                                              .collection(
-                                                                'photo_cssd',
-                                                              )
-                                                              .doc("$doc_bill")
-                                                              .set(
-                                                                {
-                                                                  'room_id':
-                                                                      room_id,
-                                                                  'room_photo':
-                                                                      base64_Slip
-                                                                          .toString(),
-                                                                  'created_at':
-                                                                      FieldValue.serverTimestamp(),
-                                                                },
-                                                                SetOptions(
-                                                                  merge: true,
-                                                                ),
-                                                              )
-                                                              .then((e) {
-                                                                setState(() {
-                                                                  base64_Slip =
-                                                                      null;
-                                                                });
+                                                                  await FirebaseFirestore
+                                                                      .instance
+                                                                      .collection(
+                                                                        'photo_cssd',
+                                                                      )
+                                                                      .doc(
+                                                                        "$doc_bill",
+                                                                      )
+                                                                      .set(
+                                                                        {
+                                                                          'room_id':
+                                                                              room_id,
+                                                                          'room_photo':
+                                                                              base64Slip,
+                                                                          'created_at':
+                                                                              FieldValue.serverTimestamp(),
+                                                                        },
+                                                                        SetOptions(
+                                                                          merge:
+                                                                              true,
+                                                                        ),
+                                                                      )
+                                                                      .then((
+                                                                        e,
+                                                                      ) {
+                                                                        setState(() {
+                                                                          base64Slip =
+                                                                              null;
+                                                                        });
+                                                                      });
+                                                                }
                                                               });
-                                                        });
-                                                      } else {
-                                                        PanaraInfoDialog.showAnimatedFade(
-                                                          context,
-                                                          message:
-                                                              "กรุณาเลือกห้องล้างก่อนเพิ่มรูปภาพ",
-                                                          buttonText: "รับทราบ",
-                                                          onTapDismiss: () {
-                                                            // _PasswordController.clear();
-                                                            Navigator.of(
-                                                              context,
-                                                              rootNavigator:
-                                                                  true,
-                                                            ).pop();
+                                                            } else {
+                                                              PanaraInfoDialog.showAnimatedFade(
+                                                                context,
+                                                                message:
+                                                                    "กรุณาเลือกห้องล้างก่อนเพิ่มรูปภาพ",
+                                                                buttonText:
+                                                                    "รับทราบ",
+                                                                onTapDismiss: () {
+                                                                  // _PasswordController.clear();
+                                                                  Navigator.of(
+                                                                    context,
+                                                                    rootNavigator:
+                                                                        true,
+                                                                  ).pop();
+                                                                },
+                                                                panaraDialogType:
+                                                                    PanaraDialogType
+                                                                        .error,
+                                                              );
+                                                            }
                                                           },
-                                                          panaraDialogType:
-                                                              PanaraDialogType
-                                                                  .error,
-                                                        );
-                                                      }
-                                                    },
-                                                    icon: Icon(
-                                                      Icons.camera_alt_outlined,
-                                                    ),
-                                                  ),
+                                                          icon: Icon(
+                                                            Icons
+                                                                .camera_alt_outlined,
+                                                          ),
+                                                        )
+                                                      : SizedBox(),
                                                 ),
                                                 Expanded(
                                                   flex: 2,
@@ -441,39 +489,43 @@ class _HomeMenuState extends State<HomeMenu> {
                                                         uploadFile_photo_gallery().then((
                                                           _,
                                                         ) async {
-                                                          final now =
-                                                              DateTime.now();
+                                                          if (base64Slip !=
+                                                              null) {
+                                                            final now =
+                                                                DateTime.now();
 
-                                                          final doc_bill =
-                                                              now.millisecondsSinceEpoch ~/
-                                                              1000;
+                                                            final doc_bill =
+                                                                now.millisecondsSinceEpoch ~/
+                                                                1000;
 
-                                                          await FirebaseFirestore
-                                                              .instance
-                                                              .collection(
-                                                                'photo_cssd',
-                                                              )
-                                                              .doc("$doc_bill")
-                                                              .set(
-                                                                {
-                                                                  'room_id':
-                                                                      room_id,
-                                                                  'room_photo':
-                                                                      base64_Slip
-                                                                          .toString(),
-                                                                  'created_at':
-                                                                      FieldValue.serverTimestamp(),
-                                                                },
-                                                                SetOptions(
-                                                                  merge: true,
-                                                                ),
-                                                              )
-                                                              .then((e) {
-                                                                setState(() {
-                                                                  base64_Slip =
-                                                                      null;
+                                                            await FirebaseFirestore
+                                                                .instance
+                                                                .collection(
+                                                                  'photo_cssd',
+                                                                )
+                                                                .doc(
+                                                                  "$doc_bill",
+                                                                )
+                                                                .set(
+                                                                  {
+                                                                    'room_id':
+                                                                        room_id,
+                                                                    'room_photo':
+                                                                        base64Slip,
+                                                                    'created_at':
+                                                                        FieldValue.serverTimestamp(),
+                                                                  },
+                                                                  SetOptions(
+                                                                    merge: true,
+                                                                  ),
+                                                                )
+                                                                .then((e) {
+                                                                  setState(() {
+                                                                    base64Slip =
+                                                                        null;
+                                                                  });
                                                                 });
-                                                              });
+                                                          }
                                                         });
                                                       } else {
                                                         PanaraInfoDialog.showAnimatedFade(
@@ -528,9 +580,12 @@ class _HomeMenuState extends State<HomeMenu> {
                                                       "-";
                                                   return GestureDetector(
                                                     onTap: () {
-                                                      final url = _byteString(
-                                                        toolsroom_photo
-                                                            .toString(),
+                                                      // final url = _byteString(
+                                                      //   toolsroom_photo
+                                                      //       .toString(),
+                                                      // );
+                                                      final url = decodeBase64(
+                                                        toolsroom_photo,
                                                       );
                                                       Navigator.of(
                                                         context,
@@ -553,10 +608,22 @@ class _HomeMenuState extends State<HomeMenu> {
                                                             ),
                                                         child: Container(
                                                           child: Image.memory(
-                                                            _byteString(
-                                                              toolsroom_photo
-                                                                  .toString(),
+                                                            // _byteString(
+                                                            // toolsroom_photo
+                                                            //     .toString(),
+                                                            decodeBase64(
+                                                              toolsroom_photo,
                                                             ),
+                                                            errorBuilder:
+                                                                (
+                                                                  _,
+                                                                  __,
+                                                                  ___,
+                                                                ) => Icon(
+                                                                  Icons
+                                                                      .broken_image,
+                                                                ),
+                                                            // ),
                                                             fit: BoxFit.fill,
                                                           ),
                                                         ),
@@ -606,6 +673,199 @@ class _HomeMenuState extends State<HomeMenu> {
                                             ),
                                           ],
                                         ),
+                                        Divider(),
+                                        StreamBuilder<
+                                          QuerySnapshot<Map<String, dynamic>>
+                                        >(
+                                          stream: FirebaseFirestore.instance
+                                              .collection("receive_cssd")
+                                              .snapshots(),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(),
+                                              );
+                                            }
+                                            if (snapshot.hasError) {
+                                              return Center(
+                                                child: Text(
+                                                  "Error: ${snapshot.error}",
+                                                ),
+                                              );
+                                            }
+                                            if (!snapshot.hasData ||
+                                                snapshot.data == null) {
+                                              return const Center(
+                                                child: Text("No data"),
+                                              );
+                                            }
+                                            final today = DateFormat(
+                                              'yyyy-MM-dd',
+                                            ).format(DateTime.now());
+                                            var data_receive = snapshot
+                                                .data!
+                                                .docs
+                                                .where((e) {
+                                                  final createdAt =
+                                                      e["created_at"];
+                                                  if (createdAt is Timestamp) {
+                                                    final dateStr =
+                                                        DateFormat(
+                                                          'yyyy-MM-dd',
+                                                        ).format(
+                                                          createdAt.toDate(),
+                                                        );
+                                                    return dateStr == today
+                                                        ? e.data()["room_id"] ==
+                                                              room_id
+                                                        : false;
+                                                  } else if (createdAt is Map &&
+                                                      createdAt["seconds"] !=
+                                                          null) {
+                                                    final secondsRaw =
+                                                        createdAt["seconds"];
+
+                                                    final seconds =
+                                                        secondsRaw is int
+                                                        ? secondsRaw
+                                                        : secondsRaw is double
+                                                        ? secondsRaw.toInt()
+                                                        : int.tryParse(
+                                                                secondsRaw
+                                                                    .toString(),
+                                                              ) ??
+                                                              0;
+
+                                                    final date =
+                                                        DateTime.fromMillisecondsSinceEpoch(
+                                                          seconds * 1000,
+                                                        );
+                                                    final dateStr = DateFormat(
+                                                      'yyyy-MM-dd',
+                                                    ).format(date);
+
+                                                    return dateStr == today
+                                                        ? e.data()["room_id"] ==
+                                                              room_id
+                                                        : false;
+                                                  }
+
+                                                  return false;
+                                                })
+                                                .toList();
+
+                                            return ListView.builder(
+                                              // padding: const EdgeInsets.all(8),
+                                              shrinkWrap: true,
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              itemCount: data_receive.length,
+                                              itemBuilder: (context, index) {
+                                                final data = data_receive[index]
+                                                    .data();
+                                                final receive_name =
+                                                    data["receive_name"]
+                                                        ?.toString() ??
+                                                    "-";
+                                                final receive_amount =
+                                                    data["receive_amount"]
+                                                        ?.toString() ??
+                                                    "-";
+                                                final data_id =
+                                                    data_receive[index].id;
+
+                                                return GestureDetector(
+                                                  onTap: () {
+                                                    PanaraConfirmDialog.showAnimatedGrow(
+                                                      context,
+                                                      title:
+                                                          "ลบรายการ $receive_name",
+                                                      message:
+                                                          "( ต้องการลบ ใช่ หรือ ไม่ )",
+                                                      confirmButtonText:
+                                                          "Confirm",
+                                                      cancelButtonText:
+                                                          "Cancel",
+                                                      onTapCancel: () {
+                                                        Navigator.of(
+                                                          context,
+                                                          rootNavigator: true,
+                                                        ).pop();
+                                                      },
+                                                      onTapConfirm: () async {
+                                                        // print('${data_table[index]["tablename"]}');
+                                                        // print('Document ID: ${data_table[index].id}');
+                                                        await FirebaseFirestore
+                                                            .instance
+                                                            .collection(
+                                                              'receive_cssd',
+                                                            )
+                                                            .doc(data_id)
+                                                            .delete();
+                                                        Navigator.of(
+                                                          context,
+                                                          rootNavigator: true,
+                                                        ).pop(); // ปิด dialog
+                                                      },
+                                                      panaraDialogType:
+                                                          PanaraDialogType
+                                                              .warning,
+                                                    );
+                                                  },
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          const BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                  5,
+                                                                ),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                  5,
+                                                                ),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                  5,
+                                                                ),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                  5,
+                                                                ),
+                                                          ),
+                                                      // border: Border.all(
+                                                      //   color: Colors.black,
+                                                      //   width: 1,
+                                                      // ),
+                                                    ),
+                                                    padding: EdgeInsets.all(5),
+                                                    child: Row(
+                                                      children: [
+                                                        Expanded(
+                                                          child: Text(
+                                                            receive_name,
+                                                            textAlign:
+                                                                TextAlign.start,
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          child: Text(
+                                                            receive_amount,
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                            ;
+                                          },
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -625,10 +885,278 @@ class _HomeMenuState extends State<HomeMenu> {
                                           flex: 2,
                                           child: Row(
                                             children: [
-                                              Text(
-                                                'อุปรกณ์',
-                                                style: TextStyle(
-                                                  fontWeight: FontWeight.bold,
+                                              Expanded(
+                                                flex: 4,
+                                                child: Text(
+                                                  'อุปรกณ์',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 4,
+                                                child: GestureDetector(
+                                                  onTap: () {
+                                                    if (room_id != null) {
+                                                      PanaraCustomDialog.show(
+                                                        context,
+                                                        barrierDismissible:
+                                                            true,
+                                                        backgroundColor:
+                                                            Colors.white,
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  8.0,
+                                                                ),
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Expanded(
+                                                                  flex: 6,
+                                                                  child: TextFormField(
+                                                                    controller:
+                                                                        _Nametools,
+                                                                    keyboardType:
+                                                                        TextInputType
+                                                                            .text,
+                                                                    decoration: InputDecoration(
+                                                                      contentPadding:
+                                                                          EdgeInsets.all(
+                                                                            8,
+                                                                          ),
+                                                                      labelText:
+                                                                          'ชื่ออุปกรณ์',
+                                                                      errorStyle: TextStyle(
+                                                                        height:
+                                                                            1,
+                                                                        fontSize:
+                                                                            9,
+                                                                      ),
+                                                                      border: OutlineInputBorder(
+                                                                        borderRadius: BorderRadius.all(
+                                                                          Radius.circular(
+                                                                            5,
+                                                                          ),
+                                                                        ),
+                                                                        borderSide: BorderSide(
+                                                                          color:
+                                                                              Colors.black,
+                                                                          width:
+                                                                              1,
+                                                                        ),
+                                                                      ),
+                                                                      enabledBorder: OutlineInputBorder(
+                                                                        borderRadius: BorderRadius.all(
+                                                                          Radius.circular(
+                                                                            5,
+                                                                          ),
+                                                                        ),
+                                                                        borderSide: BorderSide(
+                                                                          color:
+                                                                              Colors.black,
+                                                                          width:
+                                                                              1,
+                                                                        ),
+                                                                      ),
+                                                                      focusedBorder: OutlineInputBorder(
+                                                                        borderRadius: BorderRadius.all(
+                                                                          Radius.circular(
+                                                                            5,
+                                                                          ),
+                                                                        ),
+                                                                        borderSide: BorderSide(
+                                                                          color:
+                                                                              Colors.black,
+                                                                          width:
+                                                                              1,
+                                                                        ),
+                                                                      ),
+                                                                      labelStyle: TextStyle(
+                                                                        color: Colors
+                                                                            .black,
+                                                                        fontSize:
+                                                                            12,
+                                                                      ),
+                                                                      hintStyle: TextStyle(
+                                                                        color: Colors
+                                                                            .black,
+                                                                        fontSize:
+                                                                            12,
+                                                                      ),
+                                                                    ), //_InputDecoration('New Password'),
+                                                                  ),
+                                                                ),
+                                                                Expanded(
+                                                                  flex: 2,
+                                                                  child: Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment
+                                                                            .end,
+                                                                    children: [
+                                                                      IconButton(
+                                                                        onPressed: () {
+                                                                          Navigator.of(
+                                                                            context,
+                                                                            rootNavigator:
+                                                                                true,
+                                                                          ).pop();
+                                                                        },
+                                                                        icon: Icon(
+                                                                          Icons
+                                                                              .close_outlined,
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                          SizedBox(
+                                                            width: 500,
+                                                            height: 500,
+                                                            child: GridView.builder(
+                                                              scrollDirection:
+                                                                  Axis.vertical,
+                                                              itemCount: 100,
+                                                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                                crossAxisCount:
+                                                                    4,
+                                                                crossAxisSpacing:
+                                                                    5,
+                                                                mainAxisSpacing:
+                                                                    1,
+                                                              ),
+                                                              itemBuilder: (context, index) {
+                                                                return GestureDetector(
+                                                                  onTap: () async {
+                                                                    final now =
+                                                                        DateTime.now();
+
+                                                                    final doc_bill =
+                                                                        now.millisecondsSinceEpoch ~/
+                                                                        1000;
+                                                                    var _Name_tools =
+                                                                        _Nametools
+                                                                            .text
+                                                                            .toString();
+
+                                                                    await FirebaseFirestore
+                                                                        .instance
+                                                                        .collection(
+                                                                          'receive_cssd',
+                                                                        )
+                                                                        .doc(
+                                                                          "$doc_bill",
+                                                                        )
+                                                                        .set(
+                                                                          {
+                                                                            'room_id':
+                                                                                room_id,
+                                                                            'tools_id':
+                                                                                0,
+                                                                            'receive_name':
+                                                                                _Nametools,
+                                                                            'receive_amount':
+                                                                                index +
+                                                                                1,
+                                                                            'created_at':
+                                                                                FieldValue.serverTimestamp(),
+                                                                          },
+                                                                          SetOptions(
+                                                                            merge:
+                                                                                true,
+                                                                          ),
+                                                                        )
+                                                                        .then((
+                                                                          _,
+                                                                        ) {
+                                                                          Navigator.of(
+                                                                            context,
+                                                                            rootNavigator:
+                                                                                true,
+                                                                          ).pop();
+                                                                        });
+                                                                  },
+                                                                  child: Card(
+                                                                    child: Container(
+                                                                      decoration: BoxDecoration(
+                                                                        borderRadius: const BorderRadius.only(
+                                                                          topLeft: Radius.circular(
+                                                                            10,
+                                                                          ),
+                                                                          topRight: Radius.circular(
+                                                                            10,
+                                                                          ),
+                                                                          bottomLeft: Radius.circular(
+                                                                            10,
+                                                                          ),
+                                                                          bottomRight: Radius.circular(
+                                                                            10,
+                                                                          ),
+                                                                        ),
+                                                                        border: Border.all(
+                                                                          color:
+                                                                              Colors.black,
+                                                                          width:
+                                                                              1,
+                                                                        ),
+                                                                      ),
+                                                                      child: Center(
+                                                                        child: Text(
+                                                                          '${index + 1}',
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      );
+                                                    } else {
+                                                      PanaraInfoDialog.showAnimatedFade(
+                                                        context,
+                                                        message:
+                                                            "กรุณาเลือกห้องล้างก่อนรับอุปรกรณ์",
+                                                        buttonText: "รับทราบ",
+                                                        onTapDismiss: () {
+                                                          // _PasswordController.clear();
+                                                          Navigator.of(
+                                                            context,
+                                                            rootNavigator: true,
+                                                          ).pop();
+                                                        },
+                                                        panaraDialogType:
+                                                            PanaraDialogType
+                                                                .error,
+                                                      );
+                                                    }
+                                                  },
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      Text(
+                                                        'อื่นๆ',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      SizedBox(width: 10),
+                                                      Icon(
+                                                        Icons
+                                                            .add_circle_outline_rounded,
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -641,6 +1169,26 @@ class _HomeMenuState extends State<HomeMenu> {
                                                 .collection("tools_cssd")
                                                 .snapshots(),
                                             builder: (context, snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return const Center(
+                                                  child:
+                                                      CircularProgressIndicator(),
+                                                );
+                                              }
+                                              if (snapshot.hasError) {
+                                                return Center(
+                                                  child: Text(
+                                                    "Error: ${snapshot.error}",
+                                                  ),
+                                                );
+                                              }
+                                              if (!snapshot.hasData ||
+                                                  snapshot.data == null) {
+                                                return const Center(
+                                                  child: Text("No data"),
+                                                );
+                                              }
                                               var data_tools =
                                                   snapshot.data!.docs;
 
@@ -666,7 +1214,173 @@ class _HomeMenuState extends State<HomeMenu> {
                                                       data["tools_name"]
                                                           ?.toString() ??
                                                       "-";
+                                                  final tools_id =
+                                                      data_tools[index].id;
                                                   return GestureDetector(
+                                                    onTap: () {
+                                                      if (room_id != null) {
+                                                        PanaraCustomDialog.show(
+                                                          context,
+                                                          barrierDismissible:
+                                                              true,
+                                                          backgroundColor:
+                                                              Colors.white,
+                                                          children: [
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets.all(
+                                                                    8.0,
+                                                                  ),
+                                                              child: Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  Expanded(
+                                                                    child: Text(
+                                                                      toolsname,
+                                                                      style: TextStyle(
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                  Expanded(
+                                                                    child: Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .end,
+                                                                      children: [
+                                                                        IconButton(
+                                                                          onPressed: () {
+                                                                            Navigator.of(
+                                                                              context,
+                                                                              rootNavigator: true,
+                                                                            ).pop();
+                                                                          },
+                                                                          icon: Icon(
+                                                                            Icons.close_outlined,
+                                                                          ),
+                                                                        ),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                              width: 500,
+                                                              height: 500,
+                                                              child: GridView.builder(
+                                                                scrollDirection:
+                                                                    Axis.vertical,
+                                                                itemCount: 100,
+                                                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                                                  crossAxisCount:
+                                                                      4,
+                                                                  crossAxisSpacing:
+                                                                      5,
+                                                                  mainAxisSpacing:
+                                                                      1,
+                                                                ),
+                                                                itemBuilder: (context, index) {
+                                                                  return GestureDetector(
+                                                                    onTap: () async {
+                                                                      final now =
+                                                                          DateTime.now();
+
+                                                                      final doc_bill =
+                                                                          now.millisecondsSinceEpoch ~/
+                                                                          1000;
+
+                                                                      await FirebaseFirestore
+                                                                          .instance
+                                                                          .collection(
+                                                                            'receive_cssd',
+                                                                          )
+                                                                          .doc(
+                                                                            "$doc_bill",
+                                                                          )
+                                                                          .set(
+                                                                            {
+                                                                              'room_id': room_id,
+                                                                              'tools_id': tools_id,
+                                                                              'receive_name': toolsname,
+                                                                              'receive_amount':
+                                                                                  index +
+                                                                                  1,
+                                                                              'created_at': FieldValue.serverTimestamp(),
+                                                                            },
+                                                                            SetOptions(
+                                                                              merge: true,
+                                                                            ),
+                                                                          )
+                                                                          .then((
+                                                                            _,
+                                                                          ) {
+                                                                            Navigator.of(
+                                                                              context,
+                                                                              rootNavigator: true,
+                                                                            ).pop();
+                                                                          });
+                                                                    },
+                                                                    child: Card(
+                                                                      child: Container(
+                                                                        decoration: BoxDecoration(
+                                                                          borderRadius: const BorderRadius.only(
+                                                                            topLeft: Radius.circular(
+                                                                              10,
+                                                                            ),
+                                                                            topRight: Radius.circular(
+                                                                              10,
+                                                                            ),
+                                                                            bottomLeft: Radius.circular(
+                                                                              10,
+                                                                            ),
+                                                                            bottomRight: Radius.circular(
+                                                                              10,
+                                                                            ),
+                                                                          ),
+                                                                          border: Border.all(
+                                                                            color:
+                                                                                Colors.black,
+                                                                            width:
+                                                                                1,
+                                                                          ),
+                                                                        ),
+                                                                        child: Center(
+                                                                          child: Text(
+                                                                            '${index + 1}',
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        );
+                                                      } else {
+                                                        PanaraInfoDialog.showAnimatedFade(
+                                                          context,
+                                                          message:
+                                                              "กรุณาเลือกห้องล้างก่อนรับอุปรกรณ์",
+                                                          buttonText: "รับทราบ",
+                                                          onTapDismiss: () {
+                                                            // _PasswordController.clear();
+                                                            Navigator.of(
+                                                              context,
+                                                              rootNavigator:
+                                                                  true,
+                                                            ).pop();
+                                                          },
+                                                          panaraDialogType:
+                                                              PanaraDialogType
+                                                                  .error,
+                                                        );
+                                                      }
+                                                    },
                                                     child: Card(
                                                       child: Container(
                                                         decoration: BoxDecoration(
@@ -726,77 +1440,161 @@ class _HomeMenuState extends State<HomeMenu> {
     );
   }
 
-  Uint8List _byteString(String byteString) {
-    List<int> byteList = byteString
-        .replaceAll('[', '')
-        .replaceAll(']', '')
-        .split(',')
-        .map((e) => int.parse(e.trim()))
-        .toList();
-    Uint8List imageBytes = Uint8List.fromList(byteList);
-    return imageBytes;
+  // Uint8List _byteString(String byteString) {
+  //   try {
+  //     final list = byteString
+  //         .replaceAll('[', '')
+  //         .replaceAll(']', '')
+  //         .split(',')
+  //         .map((e) => int.tryParse(e.trim()) ?? 0)
+  //         .toList();
+
+  //     return Uint8List.fromList(list);
+  //   } catch (e) {
+  //     return Uint8List(0);
+  //   }
+  // }
+
+  Uint8List decodeBase64(String base64Str) {
+    return base64Decode(base64Str);
   }
 
+  // Future<void> uploadFile_photo_gallery() async {
+  //   // ignore: deprecated_member_use
+  //   final imagePicker = ImagePicker();
+  //   final pickedFile = await imagePicker.pickImage(
+  //     source: ImageSource.gallery,
+  //     imageQuality: 60, // ลดคุณภาพ = เร็วขึ้น
+  //     maxWidth: 1024, // ลดความละเอียด
+  //     maxHeight: 1448,
+  //   );
+
+  //   if (pickedFile == null) {
+  //     // print('User canceled image selection');
+  //     return;
+  //   } else {
+  //     PanaraCustomDialog.show(
+  //       context,
+  //       barrierDismissible: false,
+  //       backgroundColor: Colors.transparent,
+  //       children: [Text('LOADING...', style: TextStyle(color: Colors.white))],
+  //     );
+  //     var imageBytes = await pickedFile.readAsBytes();
+
+  //     // 3. Encode the image as a base64 string
+  //     // final base64Image = base64Encode(imageBytes);
+
+  //     setState(() {
+  //       base64_Slip = imageBytes;
+  //       Navigator.of(context, rootNavigator: true).pop();
+  //     });
+  //   }
+  // }
   Future<void> uploadFile_photo_gallery() async {
-    // ignore: deprecated_member_use
     final imagePicker = ImagePicker();
+
     final pickedFile = await imagePicker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 60, // ลดคุณภาพ = เร็วขึ้น
-      maxWidth: 1024, // ลดความละเอียด
+      imageQuality: 60,
+      maxWidth: 1024,
       maxHeight: 1448,
     );
 
-    if (pickedFile == null) {
-      // print('User canceled image selection');
-      return;
-    } else {
-      PanaraCustomDialog.show(
-        context,
-        barrierDismissible: false,
-        backgroundColor: Colors.transparent,
-        children: [Text('LOADING...', style: TextStyle(color: Colors.white))],
-      );
-      var imageBytes = await pickedFile.readAsBytes();
+    if (pickedFile == null) return;
 
-      // 3. Encode the image as a base64 string
-      // final base64Image = base64Encode(imageBytes);
+    PanaraCustomDialog.show(
+      context,
+      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      children: const [
+        Text('LOADING...', style: TextStyle(color: Colors.white)),
+      ],
+    );
 
-      setState(() {
-        base64_Slip = imageBytes;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
-    }
+    final imageBytes = await pickedFile.readAsBytes();
+
+    if (!mounted) return;
+
+    setState(() {
+      // base64_Slip = imageBytes;
+      base64Slip = base64Encode(imageBytes);
+    });
+
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
+  // Future<void> uploadFile_photo_camera() async {
+  //   // ignore: deprecated_member_use
+  //   final imagePicker = ImagePicker();
+  //   final pickedFile = await imagePicker.pickImage(
+  //     source: ImageSource.camera,
+  //     imageQuality: 60, // ลดคุณภาพ = เร็วขึ้น
+  //     maxWidth: 1024, // ลดความละเอียด
+  //     maxHeight: 1448,
+  //   );
+
+  //   if (pickedFile == null) {
+  //     // print('User canceled image selection');
+  //     return;
+  //   } else {
+  //     PanaraCustomDialog.show(
+  //       context,
+  //       barrierDismissible: false,
+  //       backgroundColor: Colors.transparent,
+  //       children: [Text('LOADING...', style: TextStyle(color: Colors.white))],
+  //     );
+  //     var imageBytes = await pickedFile.readAsBytes();
+
+  //     // 3. Encode the image as a base64 string
+  //     // final base64Image = base64Encode(imageBytes);
+  //     setState(() {
+  //       base64_Slip = imageBytes;
+  //       Navigator.of(context, rootNavigator: true).pop();
+  //     });
+  //   }
+  // }
   Future<void> uploadFile_photo_camera() async {
-    // ignore: deprecated_member_use
+    if (kIsWeb) {
+      // PanaraInfoDialog.showAnimatedFade(
+      //   context,
+      //   message: "ไม่รองรับการเปิดกล้องบน Web\nกรุณาเลือกจากแกลเลอรี",
+      //   buttonText: "รับทราบ",
+      //   onTapDismiss: () {
+      //     Navigator.of(context, rootNavigator: true).pop();
+      //   },
+      //   panaraDialogType: PanaraDialogType.warning,
+      // );
+      return;
+    }
+
     final imagePicker = ImagePicker();
     final pickedFile = await imagePicker.pickImage(
       source: ImageSource.camera,
-      imageQuality: 60, // ลดคุณภาพ = เร็วขึ้น
-      maxWidth: 1024, // ลดความละเอียด
+      imageQuality: 60,
+      maxWidth: 1024,
       maxHeight: 1448,
     );
 
-    if (pickedFile == null) {
-      // print('User canceled image selection');
-      return;
-    } else {
-      PanaraCustomDialog.show(
-        context,
-        barrierDismissible: false,
-        backgroundColor: Colors.transparent,
-        children: [Text('LOADING...', style: TextStyle(color: Colors.white))],
-      );
-      var imageBytes = await pickedFile.readAsBytes();
+    if (pickedFile == null) return;
 
-      // 3. Encode the image as a base64 string
-      // final base64Image = base64Encode(imageBytes);
-      setState(() {
-        base64_Slip = imageBytes;
-        Navigator.of(context, rootNavigator: true).pop();
-      });
-    }
+    PanaraCustomDialog.show(
+      context,
+      barrierDismissible: false,
+      backgroundColor: Colors.transparent,
+      children: const [
+        Text('LOADING...', style: TextStyle(color: Colors.white)),
+      ],
+    );
+
+    final imageBytes = await pickedFile.readAsBytes();
+
+    if (!mounted) return;
+
+    setState(() {
+      // base64_Slip = imageBytes;
+      base64Slip = base64Encode(imageBytes);
+    });
+
+    Navigator.of(context, rootNavigator: true).pop();
   }
 }

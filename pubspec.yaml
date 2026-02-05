@@ -43,29 +43,30 @@ dependencies:
   dio: ^5.4.0
   auto_size_text: ^3.0.0
   crypto: ^3.0.6
-  sqflite: ^2.4.2
+  # sqflite: ^2.4.2
   path_provider: ^2.0.15
   image_picker: ^1.0.4
+  image_picker_for_web: ^3.1.1
   path: ^1.8.3
   http_parser: ^4.1.2
-  camera: ^0.11.2
+  # camera: ^0.11.2
   charset_converter: ^2.3.0
   # blue_thermal_printer: ^1.2.3
-  print_bluetooth_thermal: ^1.1.7
-  flutter_esc_pos_utils: any
+  # print_bluetooth_thermal: ^1.1.7
+  # flutter_esc_pos_utils: any
   # flutter_blue: ^0.8.0
-  esc_pos_printer: ^4.1.0
+  # esc_pos_printer: ^4.1.0
   buttons_tabbar: ^1.0.2+1
   flutter_localization: ^0.3.1
-  flutter_barcode_listener: ^0.1.4
+  # flutter_barcode_listener: ^0.1.4
   visibility_detector: ^0.4.0+2
-  syncfusion_flutter_barcodes: any
-  pdf: any
+  # syncfusion_flutter_barcodes: any
+  # pdf: any
   # pdf_render: any
   # device_info: any
   url_launcher: ^6.3.2
   timer_builder: ^2.0.0
-  pretty_qr_code: ^3.5.0
+  # pretty_qr_code: ^3.5.0
 
 dev_dependencies:
   flutter_test:
