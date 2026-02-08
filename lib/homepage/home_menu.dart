@@ -19,6 +19,8 @@ class HomeMenu extends StatefulWidget {
 class _HomeMenuState extends State<HomeMenu> {
   // Uint8List? base64_Slip;
   final _Nametools = TextEditingController();
+
+  final _formKey__Nametools = GlobalKey<FormState>();
   String? base64Slip;
   String? name_room, room_id;
   int amount = 1;
@@ -899,6 +901,9 @@ class _HomeMenuState extends State<HomeMenu> {
                                                 child: GestureDetector(
                                                   onTap: () {
                                                     if (room_id != null) {
+                                                      setState(() {
+                                                        _Nametools.clear();
+                                                      });
                                                       PanaraCustomDialog.show(
                                                         context,
                                                         barrierDismissible:
@@ -918,77 +923,82 @@ class _HomeMenuState extends State<HomeMenu> {
                                                               children: [
                                                                 Expanded(
                                                                   flex: 6,
-                                                                  child: TextFormField(
-                                                                    controller:
-                                                                        _Nametools,
-                                                                    keyboardType:
-                                                                        TextInputType
-                                                                            .text,
-                                                                    decoration: InputDecoration(
-                                                                      contentPadding:
-                                                                          EdgeInsets.all(
-                                                                            8,
+                                                                  child: Form(
+                                                                    key:
+                                                                        _formKey__Nametools,
+                                                                    child: TextFormField(
+                                                                      controller:
+                                                                          _Nametools,
+
+                                                                      keyboardType:
+                                                                          TextInputType
+                                                                              .text,
+                                                                      decoration: InputDecoration(
+                                                                        contentPadding:
+                                                                            EdgeInsets.all(
+                                                                              8,
+                                                                            ),
+                                                                        labelText:
+                                                                            'ชื่ออุปกรณ์',
+                                                                        errorStyle: TextStyle(
+                                                                          height:
+                                                                              1,
+                                                                          fontSize:
+                                                                              9,
+                                                                        ),
+                                                                        border: OutlineInputBorder(
+                                                                          borderRadius: BorderRadius.all(
+                                                                            Radius.circular(
+                                                                              5,
+                                                                            ),
                                                                           ),
-                                                                      labelText:
-                                                                          'ชื่ออุปกรณ์',
-                                                                      errorStyle: TextStyle(
-                                                                        height:
-                                                                            1,
-                                                                        fontSize:
-                                                                            9,
-                                                                      ),
-                                                                      border: OutlineInputBorder(
-                                                                        borderRadius: BorderRadius.all(
-                                                                          Radius.circular(
-                                                                            5,
+                                                                          borderSide: BorderSide(
+                                                                            color:
+                                                                                Colors.black,
+                                                                            width:
+                                                                                1,
                                                                           ),
                                                                         ),
-                                                                        borderSide: BorderSide(
+                                                                        enabledBorder: OutlineInputBorder(
+                                                                          borderRadius: BorderRadius.all(
+                                                                            Radius.circular(
+                                                                              5,
+                                                                            ),
+                                                                          ),
+                                                                          borderSide: BorderSide(
+                                                                            color:
+                                                                                Colors.black,
+                                                                            width:
+                                                                                1,
+                                                                          ),
+                                                                        ),
+                                                                        focusedBorder: OutlineInputBorder(
+                                                                          borderRadius: BorderRadius.all(
+                                                                            Radius.circular(
+                                                                              5,
+                                                                            ),
+                                                                          ),
+                                                                          borderSide: BorderSide(
+                                                                            color:
+                                                                                Colors.black,
+                                                                            width:
+                                                                                1,
+                                                                          ),
+                                                                        ),
+                                                                        labelStyle: TextStyle(
                                                                           color:
                                                                               Colors.black,
-                                                                          width:
-                                                                              1,
+                                                                          fontSize:
+                                                                              12,
                                                                         ),
-                                                                      ),
-                                                                      enabledBorder: OutlineInputBorder(
-                                                                        borderRadius: BorderRadius.all(
-                                                                          Radius.circular(
-                                                                            5,
-                                                                          ),
-                                                                        ),
-                                                                        borderSide: BorderSide(
+                                                                        hintStyle: TextStyle(
                                                                           color:
                                                                               Colors.black,
-                                                                          width:
-                                                                              1,
+                                                                          fontSize:
+                                                                              12,
                                                                         ),
-                                                                      ),
-                                                                      focusedBorder: OutlineInputBorder(
-                                                                        borderRadius: BorderRadius.all(
-                                                                          Radius.circular(
-                                                                            5,
-                                                                          ),
-                                                                        ),
-                                                                        borderSide: BorderSide(
-                                                                          color:
-                                                                              Colors.black,
-                                                                          width:
-                                                                              1,
-                                                                        ),
-                                                                      ),
-                                                                      labelStyle: TextStyle(
-                                                                        color: Colors
-                                                                            .black,
-                                                                        fontSize:
-                                                                            12,
-                                                                      ),
-                                                                      hintStyle: TextStyle(
-                                                                        color: Colors
-                                                                            .black,
-                                                                        fontSize:
-                                                                            12,
-                                                                      ),
-                                                                    ), //_InputDecoration('New Password'),
+                                                                      ), //_InputDecoration('New Password'),
+                                                                    ),
                                                                   ),
                                                                 ),
                                                                 Expanded(
@@ -1035,53 +1045,68 @@ class _HomeMenuState extends State<HomeMenu> {
                                                               itemBuilder: (context, index) {
                                                                 return GestureDetector(
                                                                   onTap: () async {
-                                                                    final now =
-                                                                        DateTime.now();
-
-                                                                    final doc_bill =
-                                                                        now.millisecondsSinceEpoch ~/
-                                                                        1000;
-                                                                    var _Name_tools =
-                                                                        _Nametools
-                                                                            .text
-                                                                            .toString();
-
-                                                                    await FirebaseFirestore
-                                                                        .instance
-                                                                        .collection(
-                                                                          'receive_cssd',
-                                                                        )
-                                                                        .doc(
-                                                                          "$doc_bill",
-                                                                        )
-                                                                        .set(
-                                                                          {
-                                                                            'room_id':
-                                                                                room_id,
-                                                                            'tools_id':
-                                                                                0,
-                                                                            'receive_name':
-                                                                                _Nametools,
-                                                                            'receive_amount':
-                                                                                index +
-                                                                                1,
-                                                                            'created_at':
-                                                                                FieldValue.serverTimestamp(),
-                                                                          },
-                                                                          SetOptions(
-                                                                            merge:
-                                                                                true,
-                                                                          ),
-                                                                        )
-                                                                        .then((
-                                                                          _,
-                                                                        ) {
+                                                                    if (_Nametools
+                                                                            .text ==
+                                                                        '') {
+                                                                      PanaraInfoDialog.showAnimatedFade(
+                                                                        context,
+                                                                        message:
+                                                                            "กรุณากรอกชื่ออุปรกรณ์",
+                                                                        buttonText:
+                                                                            "รับทราบ",
+                                                                        onTapDismiss: () {
+                                                                          // _PasswordController.clear();
                                                                           Navigator.of(
                                                                             context,
                                                                             rootNavigator:
                                                                                 true,
                                                                           ).pop();
-                                                                        });
+                                                                        },
+                                                                        panaraDialogType:
+                                                                            PanaraDialogType.error,
+                                                                      );
+                                                                    } else {
+                                                                      final now =
+                                                                          DateTime.now();
+
+                                                                      final doc_bill =
+                                                                          now.millisecondsSinceEpoch ~/
+                                                                          1000;
+                                                                      var _Name_tools = _Nametools
+                                                                          .text
+                                                                          .toString();
+
+                                                                      await FirebaseFirestore
+                                                                          .instance
+                                                                          .collection(
+                                                                            'receive_cssd',
+                                                                          )
+                                                                          .doc(
+                                                                            "$doc_bill",
+                                                                          )
+                                                                          .set(
+                                                                            {
+                                                                              'room_id': room_id,
+                                                                              'tools_id': 0,
+                                                                              'receive_name': _Name_tools,
+                                                                              'receive_amount':
+                                                                                  index +
+                                                                                  1,
+                                                                              'created_at': FieldValue.serverTimestamp(),
+                                                                            },
+                                                                            SetOptions(
+                                                                              merge: true,
+                                                                            ),
+                                                                          )
+                                                                          .then((
+                                                                            _,
+                                                                          ) {
+                                                                            Navigator.of(
+                                                                              context,
+                                                                              rootNavigator: true,
+                                                                            ).pop();
+                                                                          });
+                                                                    }
                                                                   },
                                                                   child: Card(
                                                                     child: Container(
