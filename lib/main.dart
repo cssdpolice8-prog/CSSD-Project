@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:developer' as dev;
+import 'dart:io';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +44,20 @@ Future<void> main() async {
       ),
     );
   };
+
+  // final handler = const Pipeline()
+  //     .addMiddleware(logRequests())
+  //     .addHandler(_echoRequest);
+
+  // // สำหรับ Flutter Web, ใช้ค่า default เป็น 8080
+  // final port = int.tryParse(Platform.environment['PORT'] ?? '8080') ?? 8080;
+
+  // final server = await serve(handler, InternetAddress.anyIPv4, port);
   runApp(const MyApp());
+}
+
+Response _echoRequest(Request request) {
+  return Response.ok('Hello, World!');
 }
 
 class MyApp extends StatelessWidget {
